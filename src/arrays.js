@@ -1,4 +1,4 @@
-const { capitalizar } = require('./funcoes');
+const { capitalizar, calculaImposto, calculaDesconto } = require('./funcoes');
 
 // Observação: Para todas funções que recebem listas, se o parâmetro não for uma lista 
 // ou se a lista for vazia, retorne undefined.
@@ -152,8 +152,30 @@ function capitalizarNomeCompleto(nomeCompleto) {
 // Cupom de Desconto: NULABSSA                R$   3,00 
 // Total                                      R$  21,30
 function gerarCupomFiscal(listaNomesProdutos, listaPrecosProdutos, listaCategoriasProdutos, cupom) {
-}
+    if (!listaValida(listaNomesProdutos) || !listaValida(listaPrecosProdutos) || !listaValida(listaCategoriasProdutos)) return undefined;
 
+    let cabecalho = "Nome           Valor     Desconto  Imposto Total     \n", corpoDaNota = '', rodapeDaNota = '';
+    let listaDescontosProdutos = [], listaSubTotais = [];
+
+    let imposto = 0;
+    for (i=0; i<listaNomesProdutos.length; i++) {
+        const nome = listaNomesProdutos[i], preco = listaPrecosProdutos[i], categoria = listaCategoriasProdutos[i];
+        // obter % de imposto:
+        if (calculaImposto(preco, listaCategoriasProdutos[i])===1) imposto = 15;
+        // vai adicionar o desconto do produto atual
+        listaDescontosProdutos.push((obterDescontoCategoria(categoria)/100)*preco);
+        const valorDesconto = listaDescontosProdutos[i];
+        // vai adicionar o preco do produto atual
+        listaSubTotais.push(preco-(valorDesconto));
+
+        corpoDaNota = corpoDaNota.concat(`${nome} R$  ${preco},00 R$   ${valorDesconto},00 ${imposto}% R$ ${listaSubTotais[i]},00\n`);
+    }
+
+    const subtotal = calcularTotalDaCompra(listaSubTotais);
+    const total = calcularTotalDaCompraComDescontos(listaPrecosProdutos, listaCategoriasProdutos, cupom);
+    console.log(cabecalho+corpoDaNota)
+    return cabecalho+corpoDaNota+rodapeDaNota;
+}
 module.exports = {
     obterMenorPreco,
     obterMaiorPreco,
